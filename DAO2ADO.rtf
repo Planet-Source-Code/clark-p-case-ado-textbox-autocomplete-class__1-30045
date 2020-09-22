@@ -1,0 +1,707 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033{\fonttbl{\f0\froman\fcharset0 Times New Roman;}{\f1\fswiss\fcharset0 Arial;}{\f2\fswiss\fcharset0 Courier New;}{\f3\fnil\fcharset0 Verdana;}}
+{\colortbl ;\red0\green0\blue255;}
+\viewkind4\uc1\pard\keepn\sb100\sa100\kerning36\b\f0\fs48 Porting DAO Code to ADO with the Microsoft Jet Provider\par
+\pard\sb100\sa100\kerning0\b0\fs24 Alyssa Henry\line Microsoft Corporation\par
+July 1999\par
+\b Summary:\b0  Provides a guide to changing code that uses Microsoft\'ae Data Access Objects (DAO) into code that uses Microsoft ActiveX\'ae Data Objects (ADO). (25 printed pages) Also discusses authoring new applications using ADO with the OLE DB Provider for Microsoft Jet.\par
+\pard\keepn\sb100\sa100\b Contents\par
+\pard\sb100\sa100\cf1\ul\b0 Introduction\cf0\ulnone\line\cf1\ul General Differences\cf0\ulnone\line\cf1\ul Getting Started\cf0\ulnone\line\cf1\ul Opening a Database\cf0\ulnone\line\cf1\ul Retrieving and Modifying Data\cf0\ulnone\line\cf1\ul Conclusion\cf0\ulnone\par
+\pard\keepn\sb100\sa100\b\fs36 Introduction\par
+\pard\sb100\sa100\b0\fs24 This article is a guide to changing code that uses Microsoft Data Access Objects (DAO) into code that uses Microsoft ActiveX Data Objects (ADO). It also guides those who are writing new code using ADO with the OLE DB Provider for Microsoft Jet (Microsoft Jet Provider). It compares the general differences between DAO and ADO, and it details the mapping of objects, properties, and methods from DAO to ADO. It also highlights areas where there are functional or semantic differences between similarly named methods or properties.\par
+This article assumes that you have already decided to use ADO instead of DAO to access a Microsoft Jet database, or that you are investigating what it will take to port your code from DAO to ADO. It covers some of the advantages of using ADO over DAO. It describes many features of the Microsoft Jet Provider and demonstrates how to use them with ADO. It does not attempt to provide in-depth information on particular objects, properties, or methods. Refer to the online documentation provided with DAO and ADO for specific details on a particular item.\par
+\pard\keepn\sb100\sa100\b\fs36 General Differences\par
+\pard\sb100\sa100\b0\fs24 Three distinct object models in ADO together provide the functionality found in DAO. These three models are ADO, Microsoft ADO Extensions for DDL and Security (ADOX), and Microsoft Jet and Replication Objects (JRO). The functionality of DAO was divided among these three models because many applications will need just one of these subsets of functionality. By splitting the functionality out, applications do not need to incur the overhead of loading additional information into memory unnecessarily. The following sections provide an overview of these three object models.\par
+\pard\keepn\sb100\sa100\b\fs28 ADO: Data Manipulation\par
+\pard\sb100\sa100\b0\fs24 ADO enables your client applications to access and manipulate data through any OLE DB provider. ADO contains objects for connecting to a data source and reading, adding, updating, or deleting data.\par
+\f1\fs20{\pict\wmetafile8\picw7620\pich2540\picwgoal4320\pichgoal1440 
+0100090000034c00000003001c00000000000400000003010600050000000c02ec09c41d070000
+00fc020000000000000000040000002d01000008000000fa020000000000000000000004000000
+2d0101001c000000fb020c00090000000000900100000000000202024d532053616e7320536572
+696600040000000000ffffffff0100000000003000040000002d010200030000000000
+}\f0\fs24\par
+\b Figure 1. ADO object model\b0\par
+The ADO \b Connection\b0  object defines a session for a user for a data source. This differs from DAO, in which the \b Workspace\b0  object defines the session for a user and the data source is defined by the \b Database\b0  object.\par
+The ADO \b Command\b0  object is similar to the DAO \b QueryDef\b0  object in that both objects can be used to execute an SQL statement against a data source. Likewise, the \b Recordset\b0  object in both ADO and DAO can be used to view the contents of a table or the results from executing an SQL statement.\par
+\pard\keepn\sb100\sa100\b\fs28 ADOX: Data Definition and Security\par
+\pard\sb100\sa100\b0\fs24 The ADOX model contains objects for data definition (such as tables, views, and indexes) and creating and modifying users and groups. With ADOX, an administrator can control database schema and grant and revoke permissions on objects to users and groups.\par
+\f1\fs20{\pict\wmetafile8\picw7620\pich2540\picwgoal4320\pichgoal1440 
+0100090000034c00000003001c00000000000400000003010600050000000c02ec09c41d070000
+00fc020000000000000000040000002d01000008000000fa020000000000000000000004000000
+2d0101001c000000fb020c00090000000000900100000000000202024d532053616e7320536572
+696600040000000000ffffffff0100000000003000040000002d010200030000000000
+}\f0\fs24\par
+\b Figure 2. ADOX object model\b0\par
+The \b Catalog \b0 object is the container for the data definition collections (\b Tables\b0 , \b Procedures\b0 , and \b Views\b0 ) and the security collections (\b Users\b0  and \b Groups\b0 ). This differs from DAO, in which the \b Database\b0  object is the container for the data definition collections and the \b Workspace\b0  object contains the security collections. Each \b Catalog\b0  object is associated with only one \b Connection\b0 , whereas a DAO \b Workspace\b0  may contain multiple \b Databases\b0 .\par
+The \b Table\b0 , \b Index\b0 , and \b Column\b0  objects in ADO are roughly equivalent to the \b TableDef\b0 , \b IndexDef\b0 , and \b Field\b0  objects in DAO. Each of these objects also has a standard ADO \b Properties\b0  collection.\par
+\f1\fs20{\pict\wmetafile8\picw7620\pich2540\picwgoal4320\pichgoal1440 
+0100090000034c00000003001c00000000000400000003010600050000000c02ec09c41d070000
+00fc020000000000000000040000002d01000008000000fa020000000000000000000004000000
+2d0101001c000000fb020c00090000000000900100000000000202024d532053616e7320536572
+696600040000000000ffffffff0100000000003000040000002d010200030000000000
+}\f0\fs24\par
+\b Figure 3. ADOX object model\b0\par
+\pard\keepn\sb100\sa100\b\fs28 JRO: Replication\par
+\pard\sb100\sa100\b0\fs24 The JRO model contains objects, properties, and methods for creating, modifying, and synchronizing replicas. It is designed specifically for use with the Microsoft Jet Provider. Unlike ADO and ADOX, JRO cannot be used with data sources other than Microsoft Jet databases.\par
+The primary object in the JRO model is the \b Replica\b0  object. The \b Replica\b0  object is used to create new replicas, to retrieve and modify properties of an existing replica, and to synchronize changes with other replicas. This differs from DAO, in which the \b Database \b0 object is used for these tasks.\par
+JRO also includes a \b JetEngine\b0  object for two specific Microsoft Jet database engine features: compacting the database and refreshing data from the memory cache.\par
+\f1\fs20{\pict\wmetafile8\picw7620\pich2540\picwgoal4320\pichgoal1440 
+0100090000034c00000003001c00000000000400000003010600050000000c02ec09c41d070000
+00fc020000000000000000040000002d01000008000000fa020000000000000000000004000000
+2d0101001c000000fb020c00090000000000900100000000000202024d532053616e7320536572
+696600040000000000ffffffff0100000000003000040000002d010200030000000000
+}\f0\fs24\par
+\b Figure 4. JRO object model\b0\par
+\pard\keepn\sb100\sa100\b\fs36 Getting Started\par
+\pard\sb100\sa100\b0\fs24 To run the code examples in this document, you need references to the ADO, ADOX, and JRO type libraries in your database or project. By default, new Microsoft Access 2000 databases have a reference to ADO. However, to run these samples you'll need to add references to ADOX and JRO. If you converted an existing database to Access 2000 or are programming in Microsoft Visual Basic\'ae or some other application, you will need to include all of the references yourself.\par
+\b To add these references in Visual Basic\b0  \par
+\pard\fi-360\li720\sb100\sa100\tx720 Open a project.\line\par
+On the \b Project\b0  menu, click \b References\b0 .\line\par
+From the list, select \b Microsoft ActiveX Data Objects 2.1 Library\b0 .\line\par
+From the list, select \b Microsoft ADO Ext. 2.1 for DDL and Security\b0 .\line\par
+From the list, select \b Microsoft Jet and Replication Objects 2.1 Library\b0 .\line\par
+Click \b OK\b0 . \par
+\pard\sb100\sa100 If you include references to both ADO and DAO in the same project, you need to explicitly specify which library to use when declaring objects because DAO and ADO include several objects with the same names. For example, both models include a \b Recordset\b0  object, so the following code is ambiguous:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Dim rst as Recordset\par
+\pard\sb100\sa100\f0\fs24 To specify which object model you want to use, include a qualifier as shown:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Dim rstADO As ADODB.Recordset\par
+Dim rstDAO As DAO.Recordset\par
+\pard\sb100\sa100\f0\fs24 If the qualifier is omitted, Visual Basic for Applications (VBA) will choose the object from the model that is referenced first. So, if your list of references is ordered as follows in the \b References\b0  dialog box, an object declared as \b Recordset \b0 with no qualifier would be a DAO \b Recordset\b0 :\par
+Visual Basic for Applications\par
+Microsoft DAO 3.6 Object Library\par
+Microsoft ActiveX Data Objects 2.1 Library\par
+Microsoft ADO Ext. 2.1 for DDL and Security\par
+Microsoft Jet and Replication Objects 2.1 Library\par
+\pard\keepn\sb100\sa100\b\fs36 Opening a Database\par
+\pard\sb100\sa100\b0\fs24 Generally, one of the first steps in writing an application to access data is to open the data source. When using the Microsoft Jet database engine, you can open Microsoft Jet databases, other external data sources such as Microsoft Excel, Paradox, and dBASE with Microsoft Jet's ISAM components, and ODBC data sources.\par
+\pard\keepn\sb100\sa100\b\fs28 Microsoft Jet Databases\par
+\pard\sb100\sa100\b0\fs24 The Microsoft Jet Provider can open Microsoft Jet 4.0 databases as well as databases created with previous versions of the Microsoft Jet database engine. These examples use only Microsoft Jet 4.0 databases.\par
+The following code demonstrates how to open a Microsoft Jet database for shared, updatable access. Then the code immediately closes the database because this code is for demonstration purposes.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOOpenJetDatabase()\par
+\b   \b0 Dim db As DAO.Database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  db.Close\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOOpenJetDatabase()\par
+  Dim cnn As New ADODB.Connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  cnn.Close\par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 These two code listings for opening a database look somewhat different, but are not all that dissimilar. Aside from the fact that the objects have different names, the major difference is the format of the string passed to the method that opens the database.\par
+The ADO connection string in this example has two parts: the provider tag and the data source tag. The provider tag indicates which OLE DB provider to use, and the data source tag indicates which database to open. With DAO it is assumed that you want to use Microsoft Jet, whereas with ADO you must explicitly specify that you want to use Microsoft Jet.\par
+By default, both DAO and ADO open a database for shared updatable access when using the Microsoft Jet Provider. However, there may be times when you want to open the database exclusively or in read-only mode.\par
+The following code listings show how to open (and then close) a shared, read-only database using DAO and ADO.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOOpenJetDatabaseReadOnly()\par
+  Dim db As DAO.Database\par
+  ' Open shared, read-only.\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb", False, True)\par
+  db.Close\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOOpenJetDatabaseReadOnly()\par
+  Dim cnn As New ADODB.Connection\par
+  ' Open shared, read-only\par
+  cnn.Mode = adModeRead\par
+  cnn.Open "Provider=" & _\par
+    "Microsoft.Jet.OLEDB.4.0;" & _\par
+    "Data Source=.\\NorthWind.mdb;"\par
+  cnn.Close\par
+  \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 In the DAO listing the second two parameters to the \b OpenDatabase\b0  method indicate exclusive and read-only access respectively. In the ADO listing the \b Connection\b0  object's \b Mode\b0  property is set to the read-only constant (\b adModeRead\b0 ). By default, ADO connections are opened for shared, updatable access unless another mode is set (for example, \b adModeShareExclusive\b0 ).\par
+\pard\keepn\sb100\sa100\b\fs28 Secured Microsoft Jet Databases\par
+\pard\sb100\sa100\b0\fs24 Microsoft Jet databases can be secured in one of two ways: with share-level security or with user-level security. With share-level security the database is secured with a password. Anyone attempting to open the database must specify the correct database password. With user-level security each user is assigned a user name and password to open the database. Microsoft Jet uses a separate workgroup information file, typically named System.mdw, to store user information and passwords.\par
+\pard\keepn\sb100\sa100\b Share-level (password-protected) databases\par
+\pard\sb100\sa100\b0 The following listings demonstrate how to open a Microsoft Jet database that has been secured at the share level. \par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOOpenDBPasswordDatabase()\par
+  Dim db As DAO.Database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb", False, False, _\par
+    ";pwd=password")\par
+  db.Close\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOOpenDBPasswordDatabase()\par
+  Dim cnn As New ADODB.Connection\par
+  cnn.Open "Provider=" & _\par
+    "Microsoft.Jet.OLEDB.4.0;" & _\par
+    "Data Source=.\\NorthWind.mdb;" & _\par
+    "Jet OLEDB:Database Password=" & _\par
+    "password;"\par
+  cnn.Close\par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 In DAO the \i Connect\i0  parameter of the \b OpenDatabase\b0  method sets the database password when opening a database. With ADO the Microsoft Jet Provider connection property \b Jet OLEDB:Database Password\b0  sets the password instead.\par
+\pard\keepn\sb100\sa100\b Opening a database with user-level security\par
+\pard\sb100\sa100\b0 This next listings demonstrate how to open a database that is secured at the user level using a workgroup information file named Sysdb.mdw.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOOpenSecuredDatabase()\par
+  Dim wks As DAO.Workspace\par
+  Dim db As DAO.Database\par
+  \par
+  DBEngine.SystemDB = _\par
+    "C:\\Program Files\\Microsoft Office" _\par
+    & "\\Office\\SYSTEM.MDW"\par
+  Set wks = DBEngine.CreateWorkspace _\par
+    ("", "Admin", "")\par
+  Set db = wks.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  db.Close\par
+  wks.Close\par
+    \par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOOpenSecuredDatabase()\par
+  Dim cnn As New ADODB.Connection\par
+  cnn.Provider = _\par
+    "Microsoft.Jet.OLEDB.4.0;"\par
+  cnn.Properties _\par
+    ("Jet OLEDB:System database") = _\par
+    "C:\\Program Files\\Microsoft Office" _\par
+    & "\\Office\\SYSTEM.MDW"\par
+  cnn.Open _\par
+    "Data Source=.\\NorthWind.mdb;" & _\par
+    "User Id=Admin;Password=;"\par
+  \par
+  cnn.Close\par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 In ADO a Microsoft Jet provider-specific connection property, \b Jet OLEDB:System database\b0 , specifies the system database. This is equivalent to setting the \b DBEngine\b0  object's \b SystemDB\b0  property before opening a database using DAO.\par
+Notice that in this example the \b Provider \b0 property is set as a property of the \b Connection \b0 object rather than as part of the \i ConnectionString\i0  argument to the \b Open\b0  method. That is because before you can reference provider-specific properties from the \b Connection \b0 object's \b Properties \b0 collection, it is necessary to indicate which provider you are using. If the first line of code had been omitted, error 3265 (\b adErrItemNotFound\b0 ), "ADO could not find the object in the collection corresponding to the name or ordinal reference requested by the application," would have occurred when trying to set the value for the \b Jet OLEDB:System database\b0  property.\par
+\pard\keepn\sb100\sa100\b\fs36 Retrieving and Modifying Data\par
+\pard\sb100\sa100\b0\fs24 Both DAO and ADO include a \b Recordset\b0  object that is the primary object used for retrieving and modifying data. A \b Recordset\b0  object represents a set of records in a table or a set of records that are a result of a query.\par
+The \b Recordset\b0  object contains a \b Fields\b0  collection that contains \b Field\b0  objects, each of which represent a single column of data within the \b Recordset\b0 .\par
+\pard\keepn\sb100\sa100\b\fs28 Opening a Recordset\par
+\pard\sb100\sa100\b0\fs24 Like DAO, ADO \b Recordset\b0  objects can be opened from several different objects. In ADO a \b Recordset \b0 can be opened with the \b Connection\b0  object \b Execute\b0  method, the \b Command \b0 object \b Execute \b0 method, or the \b Recordset\b0  object \b Open \b0 method. ADO \b Recordset\b0  objects cannot be opened directly from \b Table\b0 , \b Procedure\b0 , or \b View \b0 objects. ADO \b Recordset \b0 objects opened with the \b Execute \b0 method are always forward-only, read-only \b Recordsets\b0 . If you need to be able to scroll or update data within the \b Recordset \b0 you must use the \b Recordset \b0 object \b Open \b0 method.\par
+The \i CursorType\i0 , \i LockType\i0 , and \i Options\i0  parameters of the \b Open \b0 method determine the type of \b Recordset \b0 that is returned. The following table shows how the parameters to the DAO \b Recordset \b0 object \b Open \b0 method can be mapped to ADO properties.\par
+\trowd\trgaph75\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx2326\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx8309\pard\intbl\b DAO Recordset type\b0\cell\b ADO Recordset properties or parameters\b0\cell\row
+\intbl dbOpenDynaset\cell CursorType=adOpenKeyset\cell\row
+\intbl dbOpenSnapshot\cell CursorType=adOpenStatic\cell\row
+\intbl dbOpenForwardOnly\cell CursorType=adOpenForwardOnly\cell\row
+\intbl dbOpenTable\cell CursorType=adOpenKeyset, Options=adCmdTableDirect\cell\row
+\pard\sb100\sa100\par
+\trowd\trgaph75\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx3324\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx8984\pard\intbl\b DAO Recordset Options values\b0\cell\b ADO Recordset properties\b0\cell\row
+\intbl dbAppendOnly\cell Properties("Append-Only Rowset")\cell\row
+\intbl dbSQLPassThrough\cell Properties("Jet OLEDB:ODBC Pass-Through Statement")\cell\row
+\intbl dbSeeChanges\cell No equivalent\cell\row
+\intbl dbDenyWrite\cell No equivalent\cell\row
+\intbl dbDenyRead\cell No equivalent\cell\row
+\intbl dbInconsistent\cell Properties("Jet OLEDB:Inconsistent") = True\cell\row
+\intbl dbConsistent\cell Properties("Jet OLEDB:Inconsistent") = False\cell\row
+\pard\sb100\sa100\par
+\trowd\trgaph75\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx3532\clbrdrt\brdrw15\brdrs\clbrdrl\brdrw15\brdrs\clbrdrb\brdrw15\brdrs\clbrdrr\brdrw15\brdrs \cellx7064\pard\intbl\b DAO Recordset LockType values\b0\cell\b ADO Recordset LockType values\b0\cell\row
+\intbl dbReadOnly\cell adLockReadOnly\cell\row
+\intbl dbPessimistic\cell adLockPessimistic\cell\row
+\intbl dbOptimistic\cell adLockOptimistic\cell\row
+\pard\sb100\sa100 The Microsoft Jet Provider does not support a number of combinations of \i CursorType\i0  and \i LockType\i0\emdash for example, CursorType=\b adOpenDynamic\b0  and LockType=\b adLockOptimistic\b0 . If you specify an unsupported combination, ADO will pass your request to the Microsoft Jet Provider, which will then degrade to a supported \b CursorType\b0  or \b LockType\b0 . Use the \b CursorType\b0  and \b LockType\b0  properties of the \b Recordset\b0  once it is opened to determine what type of \b Recordset\b0  was created.\par
+The following listings demonstrate how to open a forward-only, read-only \b Recordset\b0 , and then print the values of each field.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOOpenRecordset()\par
+  Dim db As DAO.Database\par
+  Dim rst As DAO.Recordset\par
+  Dim fld As DAO.Field\par
+  \par
+  'Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  'Open the Recordset\par
+  Set rst = db.OpenRecordset _\par
+    ("SELECT * FROM Customers " & _\par
+    "WHERE Region = 'WA'", _\par
+    dbOpenForwardOnly, dbReadOnly)\par
+  \par
+  ' Print the values for the fields in\par
+  ' the first record in the debug window\par
+  For Each fld In rst.Fields\par
+    Debug.Print fld.Value & ";";\par
+  Next\par
+  Debug.Print\par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOOpenRecordset()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  Dim fld As ADODB.Field\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the forward-only,\par
+  ' read-only recordset\par
+  rst.Open "SELECT * FROM Customers " & _\par
+    "WHERE Region = 'WA'", cnn, _\par
+    adOpenForwardOnly, adLockReadOnly\par
+  \par
+  ' Print the values for the fields in\par
+  ' the first record in the debug window\par
+  For Each fld In rst.Fields\par
+    Debug.Print fld.Value & ";";\par
+  Next\par
+  Debug.Print\par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 In the preceding DAO and ADO code, the \b Recordset\b0  is opened and then the data in the first record of the \b Recordset\b0  is printed to the Debug window by iterating through each field in the \b Fields\b0  collection and printing its \b Value\b0 .\par
+\pard\keepn\sb100\sa100\b\fs28 Navigating Within a Recordset\par
+\pard\sb100\sa100\b0\fs24 A \b Recordset\b0  object has a current position. The position may be before the first record (\b BOF\b0 ), after the last record (\b EOF\b0 ), or on a specific record within the \b Recordset\b0 . When retrieving information with the \b Field\b0  object, the information always pertains to the record at the current position.\par
+\pard\keepn\sb100\sa100\b Moving to another record\par
+\pard\sb100\sa100\b0 Both DAO and ADO contain several methods for moving from one record to another. These methods are \b Move\b0 , \b MoveFirst\b0 , \b MoveLast\b0 , \b MoveNext\b0 , and \b MovePrevious\b0 . \par
+The following listings demonstrate how to use the \b MoveNext \b0 method to iterate through all of the records in the \b Recordset\b0 .\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOMoveNext()\par
+  Dim db As DAO.Database\par
+  Dim rst As DAO.Recordset\par
+  Dim fld As DAO.Field\par
+  \par
+  'Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  'Open the Recordset\par
+  Set rst = db.OpenRecordset _\par
+    ("SELECT * FROM Customers " & _\par
+    "WHERE Region = 'WA'", _\par
+    dbOpenForwardOnly, dbReadOnly)\par
+  \par
+  ' Print the values for the fields in\par
+  ' the first record in the debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOMoveNext()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  Dim fld As ADODB.Field\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the forward-only,\par
+  ' read-only recordset\par
+  rst.Open "SELECT * FROM Customers " & _\par
+    "WHERE Region = 'WA'", cnn, _\par
+    adOpenForwardOnly, adLockReadOnly\par
+  \par
+  ' Print the values for the fields in\par
+  ' the first record in the debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 Notice that the code for iterating through the \b Recordset\b0  in DAO and ADO is identical. \par
+\pard\keepn\sb100\sa100\b ADO shortcuts to display and open Recordsets\par
+\pard\sb100\sa100\b0 In the previous example, the ADO code could be rewritten to use the \b Recordset \b0 object's \b GetString \b0 method to print the data to the Debug window. This method returns a formatted string containing data from the records in the \b Recordset\b0 . Using \b GetString\b0 , the While loop in the previous ADO example could be replaced with the single line:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Debug.Print rst.GetString _\par
+  (adClipString, , ";")\par
+\pard\sb100\sa100\f0\fs24 This method is handy for debugging as well as populating grids and other controls that allow you to pass in a formatted string representing the data. \b GetString\b0  is also faster than looping through the \b Recordset\b0  and generating the string with Visual Basic for Applications code.\par
+The ADO example could also have been rewritten more concisely by using the \b Recordset \b0 object's \b Open \b0 method's \i ActiveConnection \i0 parameter to specify the connection string rather than first opening a \b Connection \b0 object and then passing that object in as the \b ActiveConnection\b0 . The \b Recordset\b0  object's \b Open \b0 method call would look like this:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 rst.Open "SELECT * FROM Customers " & _\par
+  "WHERE Region = 'WA'", _\par
+  "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+  & "Data Source=.\\NorthWind.mdb;", _\par
+  adOpenForwardOnly, adLockReadOnly\par
+\pard\sb100\sa100\f0\fs24 Internally, these two mechanisms are essentially the same. When you pass a connection string to the \b Recordset \b0 object's \b Open \b0 method (rather than assigning a \b Connection \b0 object to the \b Recordset \b0 object's \b ActiveConnection\b0  property), ADO creates a new, internal \b Connection \b0 object. If you plan on opening more than one \b Recordset \b0 from a given data source, or opening \b Command \b0 or \b Catalog \b0 objects, create a \b Connection \b0 object and use that object for the \b ActiveConnection\b0 . This will reduce the amount of resources consumed and increase performance.\par
+\pard\keepn\sb100\sa100\b\fs28 Updating Data in a Recordset\par
+\pard\sb100\sa100\b0\fs24 Once you have opened an updatable recordset by specifying the appropriate DAO \b Recordset\b0  object \b Type \b0 or ADO \b CursorType \b0 and \b LockType\b0 , you can change, delete, or add new records using methods of the \b Recordset \b0 object.\par
+\pard\keepn\sb100\sa100\b Adding new records\par
+\pard\sb100\sa100\b0 Both DAO and ADO allow you to add new records to an updatable \b Recordset \b0 by first calling the \b AddNew \b0 method, specifying the values for the fields, and finally committing the changes with the \b Update \b0 method. The following code shows how to add a new record using DAO and ADO.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOAddRecord()\par
+  Dim db As DAO.Database\par
+  Dim rst As DAO.Recordset\par
+      \par
+  'Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  'Open the Recordset\par
+  Set rst = db.OpenRecordset _\par
+    ("SELECT * FROM Customers", _\par
+    dbOpenDynaset)\par
+  \par
+  ' Add a new record\par
+  rst.AddNew\par
+  \par
+  ' Specify the values for the fields\par
+  rst!CustomerId = "HENRY"\par
+  rst!CompanyName = "Henry's Chop House"\par
+  rst!ContactName = "Mark Henry"\par
+  rst!ContactTitle = _\par
+    "Sales Representative"\par
+  rst!Address = "40178 NE 8th Street"\par
+  rst!City = "Bellevue"\par
+  rst!Region = "WA"\par
+  rst!PostalCode = "98107"\par
+  rst!Country = "USA"\par
+  rst!Phone = "(425) 899-9876"\par
+  rst!Fax = "(425) 898-8908"\par
+\par
+  ' Save the changes you made to the\par
+  ' current record in the Recordset\par
+  rst.Update\par
+  \par
+  ' For this example, just print out\par
+  ' CustomerId for the new record\par
+  ' Position recordset on new record\par
+  rst.Bookmark = rst.LastModified\par
+  Debug.Print rst!CustomerId\par
+  \par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOAddRecord()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the recordset\par
+  rst.Open "SELECT * FROM Customers", _\par
+    cnn, adOpenKeyset, adLockOptimistic\par
+  ' Add a new record\par
+  rst.AddNew\par
+  \par
+  ' Specify the values for the fields\par
+  rst!CustomerId = "HENRY"\par
+  rst!CompanyName = "Henry's Chop House"\par
+  rst!ContactName = "Mark Henry"\par
+  rst!ContactTitle = _\par
+    "Sales Representative"\par
+  rst!Address = "40178 NE 8th Street"\par
+  rst!City = "Bellevue"\par
+  rst!Region = "WA"\par
+  rst!PostalCode = "98107"\par
+  rst!Country = "USA"\par
+  rst!Phone = "(425) 555-9876"\par
+  rst!Fax = "(425) 555-8908"\par
+\par
+  ' Save the changes you made to the\par
+  ' current record in the Recordset\par
+  rst.Update\par
+  \par
+  ' For this example, just print out\par
+  ' CustomerId for the new record\par
+  Debug.Print rst!CustomerId\par
+  \par
+  'Close the recordset\par
+  rst.Close\par
+ \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 DAO and ADO behave differently when a new record is added. With DAO the record that was current before you used \b AddNew\b0  remains current. With ADO the newly inserted record becomes the current record. Because of this, it is not necessary to explicitly reposition on the new record to get information such as the value of an auto-increment column for the new record. For this reason, in the preceding ADO example, there is no equivalent code to the \f2\fs20 rst.Bookmark = rst.LastModified \f0\fs24 code found in the DAO example.\par
+ADO also provides a shortcut syntax for adding new records. The \b AddNew\b0  method has two optional parameters, \i FieldList \i0 and \i Values\i0 , that take an array of field names and field values respectively. The following example demonstrates how to use the shortcut syntax.\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOAddRecord2()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the recordset\par
+  rst.Open "SELECT * FROM Shippers", _\par
+    cnn, adOpenKeyset, adLockOptimistic\par
+  ' Add a new record\par
+  rst.AddNew Array("CompanyName", _\par
+    "Phone"), Array("World Express", _\par
+    "(425) 555-7863")\par
+  \par
+  ' Save the changes you made to the\par
+  ' current record in the Recordset\par
+  rst.Update\par
+  \par
+  ' For this example, just print out the\par
+  ' ShipperId for the new row.\par
+  Debug.Print rst!ShipperId\par
+  \par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\keepn\sb100\sa100\b\f0\fs24 Updating existing records\par
+\pard\sb100\sa100\b0 The following code demonstrates how to open a scrollable, updatable \b Recordset\b0  and modify the data in a record.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOUpdateRecord()\par
+  Dim db As DAO.Database\par
+  Dim rst As DAO.Recordset\par
+  \par
+  'Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  'Open the Recordset\par
+  Set rst = db.OpenRecordset _\par
+    ("SELECT * FROM Customers " & _\par
+    "WHERE CustomerId = 'LAZYK'", _\par
+    dbOpenDynaset)\par
+  \par
+  ' Put the Recordset in Edit Mode\par
+  rst.Edit\par
+  \par
+  ' Update the Contact name of the\par
+  ' first record\par
+  rst.Fields("ContactName").Value = _\par
+    "New Name"\par
+  ' Save the changes you made to the\par
+  ' current record in the Recordset\par
+  rst.Update\par
+  \par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOUpdateRecord()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the recordset\par
+  rst.Open "SELECT * FROM Customers " & _\par
+    "WHERE CustomerId = 'LAZYK'", _\par
+    cnn, adOpenKeyset, adLockOptimistic\par
+    \par
+  ' Update the Contact name of the\par
+  ' first record\par
+  rst.Fields("ContactName").Value = _\par
+    "New Name"\par
+  ' Save the changes you made to the\par
+  ' current record in the Recordset\par
+  rst.Update\par
+  \par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 Alternatively, in both the DAO and ADO code examples, the explicit syntax:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20   rst.Fields("ContactName").Value = _\par
+    "New Name"\par
+\pard\sb100\sa100\f0\fs24 can be shortened to:\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20   rst!ContactName = "New Name"\par
+\pard\sb100\sa100\f0\fs24 The ADO and DAO code for updating data in a \b Recordset\b0  is very similar. The major difference between the two preceding examples is that DAO requires you to put the \b Recordset\b0  into an editable state with the \b Edit \b0 method. ADO does not require you to explicitly indicate that you want to be in edit mode. With both DAO and ADO you can verify the edit status of the current record by using the \b EditMode\b0  property.\par
+One difference between DAO and ADO is the behavior when updating a record and then moving to another record without calling the \b Update\b0  method. With DAO any changes made to the current record are lost when moving to another record without first calling \b Update\b0 . ADO automatically commits the changes to the current record when moving to a new record. You can explicitly discard changes to the current record with both DAO and ADO by using the \b CancelUpdate\b0  method.\par
+\pard\keepn\sb100\sa100\b\fs28 Executing Queries\par
+\pard\sb100\sa100\b0\fs24 You can execute a query with ADO as easily as you can with DAO. ADO uses a slightly different technique for working with queries, but provides more functionality than DAO provides. You'll also write less code with ADO to do the same thing as you would with DAO.\par
+\pard\keepn\sb100\sa100\b Executing a nonparameterized stored query\par
+\pard\sb100\sa100\b0 A nonparameterized stored query is an SQL statement that has been saved in the database and does not require that additional variable information be specified in order to execute. The following listings demonstrate how to execute such a query.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOExecuteQuery()\par
+  If gbBreakEach Then Stop\par
+  Dim db As DAO.Database\par
+  Dim rst As DAO.Recordset\par
+  Dim fld As DAO.Field\par
+  \par
+  'Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  'Open the Recordset\par
+  Set rst = db.OpenRecordset _\par
+    ("Products Above Average Price", _\par
+    dbOpenForwardOnly, dbReadOnly)\par
+  \par
+  ' Display the records in the\par
+  ' debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+ \par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOExecuteQuery()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim rst As New ADODB.Recordset\par
+  Dim fld As ADODB.Field\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+  \par
+  ' Open the recordset\par
+  rst.Open _\par
+    "[Products Above Average Price]", _\par
+    cnn, adOpenForwardOnly, _\par
+    adLockReadOnly, adCmdStoredProc\par
+  \par
+  ' Display the records in the\par
+  ' debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 The code for executing a nonparameterized, row-returning query is almost identical. With ADO, if the query name contains spaces you must use square brackets ([ ]) around the name.\par
+\pard\keepn\sb100\sa100\b Executing a parameterized stored query\par
+\pard\sb100\sa100\b0 A parameterized stored query is an SQL statement that has been saved in the database and requires that additional variable information be specified in order to execute. The following code shows how to execute such a query.\par
+\b DAO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub DAOExecuteParamQuery()\par
+  Dim db As DAO.Database\par
+  Dim qdf As DAO.QueryDef\par
+  Dim rst As DAO.Recordset\par
+  Dim fld As DAO.Field\par
+      \par
+  ' Open the database\par
+  Set db = DBEngine.OpenDatabase _\par
+    (".\\NorthWind.mdb")\par
+  ' Get the QueryDef from the\par
+  ' QueryDefs collection\par
+  Set qdf = db.QueryDefs("Sales by Year")\par
+  \par
+  ' Specify the parameter values\par
+  qdf.Parameters _\par
+    ("Forms!Sales by Year Dialog!" & _\par
+    "BeginningDate") = #8/1/1997#\par
+  qdf.Parameters _\par
+    ("Forms!Sales by Year Dialog!" & _\par
+    "EndingDate") = #8/31/1997#\par
+  \par
+  ' Open the Recordset\par
+  Set rst = qdf.OpenRecordset _\par
+    (dbOpenForwardOnly, dbReadOnly)\par
+  ' Display the records in the\par
+  ' debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\b\f0\fs24 ADO\b0\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOExecuteParamQuery()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim cat As New ADOX.Catalog\par
+  Dim cmd As ADODB.Command\par
+  Dim rst As New ADODB.Recordset\par
+  Dim fld As ADODB.Field\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+        \par
+  ' Open the catalog\par
+  cat.ActiveConnection = cnn\par
+  \par
+  ' Get the Command object from the\par
+  ' Procedure\par
+  Set cmd = cat.Procedures _\par
+    ("Sales by Year").Command\par
+  ' Specify the parameter values\par
+  cmd.Parameters _\par
+    ("Forms![Sales by Year Dialog]!" & _\par
+    "BeginningDate") = #8/1/1997#\par
+  cmd.Parameters _\par
+    ("Forms![Sales by Year Dialog]!" & _\par
+    "EndingDate") = #8/31/1997#\par
+    \par
+  ' Open the recordset\par
+  rst.Open cmd, , adOpenForwardOnly, _\par
+    adLockReadOnly, adCmdStoredProc\par
+  ' Display the records in the\par
+  ' debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+\par
+End Sub\par
+\pard\sb100\sa100\f0\fs24 In one more variation of the ADO code to execute a parameterized query, the example could be rewritten to not use any ADOX code.\par
+\pard\tx0\tx959\tx1918\tx2877\tx3836\tx4795\tx5754\tx6713\tx7672\tx8631\f2\fs20 Sub ADOExecuteParamQuery2()\par
+  Dim cnn As New ADODB.Connection\par
+  Dim cmd As New ADODB.Command\par
+  Dim rst As New ADODB.Recordset\par
+  Dim fld As ADODB.Field\par
+  \par
+  ' Open the connection\par
+  cnn.Open _\par
+    "Provider=Microsoft.Jet.OLEDB.4.0;" _\par
+    & "Data Source=.\\NorthWind.mdb;"\par
+        \par
+  ' Create the command\par
+  Set cmd.ActiveConnection = cnn\par
+  cmd.CommandText = "[Sales by Year]"\par
+  \par
+  ' Execute the Command, passing in the\par
+  ' values for the parameters\par
+  Set rst = cmd.Execute(, _\par
+    Array(#8/1/1997#, #8/31/1997#), _\par
+    adCmdStoredProc)\par
+    \par
+  ' Display the records in the\par
+  ' debug window\par
+  While Not rst.EOF\par
+    For Each fld In rst.Fields\par
+      Debug.Print fld.Value & ";";\par
+    Next\par
+    Debug.Print\par
+    rst.MoveNext\par
+  Wend\par
+  'Close the recordset\par
+  rst.Close\par
+  \par
+End Sub\par
+\pard\keepn\sb100\sa100\b\f0\fs36 Conclusion\par
+\pard\sb100\sa100\b0\fs24 The complete technical article, "Migrating from DAO to ADO: Using ADO with the Microsoft Jet Provider," covers many subjects that are not covered in this article. It covers additional data management topics, such as opening and linking ISAM and ODBC databases; getting the current position; seeking, finding, filtering, and sorting records; and executing bulk operations. Beyond that, it covers data definition topics such as defining and retrieving the schema of a database, including creating and modifying tables, indexes, keys, relationships, and queries. It also discusses how to work with Microsoft Jet security, database replication, error handlers, transactions, and some features specific to Jet. Finally, it highlights some new features in ADO that are not available in DAO. Several appendices are included for reference.\par
+ADO is designed to make the process of migrating from DAO simple. In the past, DAO made working with tabular databases easier than calling dynamic-link library (DLL) functions by wrapping up those functions with objects. This made data access relatively simple for most developers. ADO uses this strength of DAO and expands on it. ADO uses OLE DB to work with data sources, so you will be able to reach many more data sources than with DAO. Many of these data sources won't be stored as traditional, tabular databases. In those cases, using DAO won't be possible. ADO is similar enough to DAO that you won't need to relearn an entire object model to handle these new data sources. Once you've learned ADO, you're ready for the future of data access.\par
+\par
+\cf1\ul\i\f3\fs18 Send feedback <mailto:msdn@microsoft.com>\cf0\ulnone  to MSDN.\i0\f0\fs24  \cf1\ul\i\f3\fs18 Look here <JavaScript:alink_301.Click()>\cf0\ulnone  for MSDN Online resources.\i0\f0\fs24  \par
+\pard\f1\fs20\par
+}
+ 
